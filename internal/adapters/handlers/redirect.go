@@ -33,6 +33,10 @@ func (h *RedirectFunctionHandler) Redirect(ctx context.Context, req events.APIGa
 		StatusCode: http.StatusMovedPermanently,
 		Headers: map[string]string{
 			"Location": *longLink,
+			"Access-Control-Allow-Origin":  "*",                // or your origin
+        	"Access-Control-Expose-Headers":"Location",
+        	"Access-Control-Allow-Methods": "GET,OPTIONS",
 		},
+		Body: *longLink,
 	}, nil
 }

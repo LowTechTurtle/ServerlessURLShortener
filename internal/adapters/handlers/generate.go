@@ -26,6 +26,7 @@ func NewGenerateLinkFunctionHandler(l *services.LinkService) *GenerateLinkFuncti
 
 func (h *GenerateLinkFunctionHandler) CreateShortLink(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayProxyResponse, error) {
 	var requestBody RequestBody
+
 	err := json.Unmarshal([]byte(req.Body), &requestBody)
 	if err != nil {
 		return ClientError(http.StatusBadRequest, "Invalid JSON")
@@ -59,7 +60,13 @@ func (h *GenerateLinkFunctionHandler) CreateShortLink(ctx context.Context, req e
 
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       string(js),
+		Headers: map[string]string{
+    		"Access-Control-Allow-Origin":     "*", // or "https://your-site.example"
+    		"Access-Control-Allow-Headers":    "Content-Type,Authorization",
+    		"Access-Control-Allow-Methods":    "OPTIONS,POST,GET,PUT,DELETE",
+    		"Access-Control-Expose-Headers":   "Content-Length",
+  		},
+		Body: string(js),
 	}, nil
 }
 

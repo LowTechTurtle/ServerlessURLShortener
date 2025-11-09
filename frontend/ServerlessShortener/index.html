@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container hidden" id="auth-section">
+        <header>
+            <h1>URL Shortener</h1>
+            <button onclick="signOut()" class="btn btn-secondary" style="float:right;">Sign Out</button>
+            <p class="subtitle">Create and manage your short links</p>
+        </header>
+
+        <section class="create-section">
+            <h2>Create Short Link</h2>
+            <form id="create-form">
+                <div class="form-group">
+                    <input 
+                        type="url" 
+                        id="long-url" 
+                        placeholder="Enter your long URL here (e.g., https://example.com/very/long/path)" 
+                        required
+                    >
+                </div>
+                <button type="submit" class="btn btn-primary">Shorten URL</button>
+            </form>
+            
+            <div id="result-section" class="result-section hidden">
+                <h3>Your Short Link</h3>
+                <div class="short-link-display">
+                    <input type="text" id="short-link" readonly>
+                    <button id="copy-btn" class="btn btn-secondary">Copy</button>
+                </div>
+                <p class="link-id">Link ID: <span id="link-id"></span></p>
+            </div>
+        </section>
+
+        <section class="manage-section">
+            <h2>Manage Links</h2>
+            <div id="links-list" class="links-list">
+                <p class="empty-state">No links created yet. Create your first short link above!</p>
+            </div>
+        </section>
+
+        <div id="notification" class="notification hidden"></div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+    <script src="redirect.js"></script>
+</body>
+</html>
+

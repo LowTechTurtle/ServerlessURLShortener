@@ -18,8 +18,18 @@ type LinkRepository struct {
 	tableName string
 }
 
-func NewLinkRepository(ctx context.Context, tableName string) *LinkRepository {
-	cfg, err := config.LoadDefaultConfig(ctx)
+func NewLinkRepository(ctx context.Context, tableName string, endpoint string) *LinkRepository {
+	var cfg aws.Config
+	var err error
+
+	if endpoint != "" {
+		cfg, err = config.LoadDefaultConfig(ctx,
+			config.WithBaseEndpoint(endpoint),
+		)
+	} else {
+		cfg, err = config.LoadDefaultConfig(ctx)
+	}
+
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}

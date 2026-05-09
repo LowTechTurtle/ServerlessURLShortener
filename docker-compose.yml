@@ -1,0 +1,89 @@
+services:
+  # 1. Redis Cache
+  cache:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # 2. DynamoDB Local
+  dynamodb:
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    working_dir: /home/dynamodblocal
+
+  # 3. Initialization container (Create DynamoDB table)
+  db-init:
+    image: amazon/aws-cli
+    environment:
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_DEFAULT_REGION=us-east-1
+    depends_on:
+      - dynamodb
+    entrypoint: /bin/bash
+    command: >
+      -c "sleep 5 && aws dynamodb create-table --endpoint-url http://dynamodb:8000 --table-name UrlShortenerTable --attribute-definitions AttributeName=id,AttributeType=S --key-schema AttributeName=id,KeyType=HASH --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 || true"
+
+  # 4. Lambda Functions
+  app-generate:
+    build:
+      context: .
+      args:
+        - FUNCTION=generate
+    ports:
+      - "8081:8080"
+    environment:
+      - LinkTableName=UrlShortenerTable
+      - DynamoDBEndpoint=http://dynamodb:8000
+      - RedisAddress=cache:6379
+      - RedisPassword=
+      - RedisDB=0
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+    depends_on:
+      - dynamodb
+      - cache
+
+  app-redirect:
+    build:
+      context: .
+      args:
+        - FUNCTION=redirect
+    ports:
+      - "8082:8080"
+    environment:
+      - LinkTableName=UrlShortenerTable
+      - DynamoDBEndpoint=http://dynamodb:8000
+      - RedisAddress=cache:6379
+      - RedisPassword=
+      - RedisDB=0
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+    depends_on:
+      - dynamodb
+      - cache
+
+  app-delete:
+    build:
+      context: .
+      args:
+        - FUNCTION=delete
+    ports:
+      - "8083:8080"
+    environment:
+      - LinkTableName=UrlShortenerTable
+      - DynamoDBEndpoint=http://dynamodb:8000
+      - RedisAddress=cache:6379
+      - RedisPassword=
+      - RedisDB=0
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - AWS_REGION=us-east-1
+    depends_on:
+      - dynamodb
+      - cache

@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+# AWS Lambda generated binaries
+bootstrap
+function.zip
+
 # Test binary, built with `go test -c`
 *.test
 

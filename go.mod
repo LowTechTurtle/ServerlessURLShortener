@@ -1,6 +1,6 @@
 module github.com/LowTechTurtle/ServerlessURLShortener
 
-go 1.25.2
+go 1.23.0
 
 require (
 	github.com/aws/aws-lambda-go v1.50.0

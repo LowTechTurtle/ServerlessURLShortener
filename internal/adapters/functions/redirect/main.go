@@ -16,8 +16,9 @@ func main() {
 	redisAddress, redisPassword, redisDB := appConfig.GetRedisParams()
 	cache := cache.NewRedisCache(redisAddress, redisPassword, redisDB)
 	linkTableName := appConfig.GetLinkTableName()
+	dynamoDBEndpoint := appConfig.GetDynamoDBEndpoint()
 
-	linkRepo := repository.NewLinkRepository(context.TODO(), linkTableName)
+	linkRepo := repository.NewLinkRepository(context.TODO(), linkTableName, dynamoDBEndpoint)
 	linkService := services.NewLinkService(linkRepo, cache)
 
 	handler := handlers.NewRedirectFunctionHandler(linkService)

@@ -15,10 +15,11 @@ func main() {
 	appConfig := config.NewConfig()
 	redisAddress, redisPassword, redisDB := appConfig.GetRedisParams()
 	linkTableName := appConfig.GetLinkTableName()
+	dynamoDBEndpoint := appConfig.GetDynamoDBEndpoint()
 
 	cache := cache.NewRedisCache(redisAddress, redisPassword, redisDB)
 
-	linkRepo := repository.NewLinkRepository(context.TODO(), linkTableName)
+	linkRepo := repository.NewLinkRepository(context.TODO(), linkTableName, dynamoDBEndpoint)
 	linkService := services.NewLinkService(linkRepo, cache)
 
 	handler := handlers.NewDeleteFunctionHandler(linkService)

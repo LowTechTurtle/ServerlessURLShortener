@@ -61,11 +61,11 @@ func (h *GenerateLinkFunctionHandler) CreateShortLink(ctx context.Context, req e
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Headers: map[string]string{
-    		"Access-Control-Allow-Origin":     "*", // or "https://your-site.example"
-    		"Access-Control-Allow-Headers":    "Content-Type,Authorization",
-    		"Access-Control-Allow-Methods":    "OPTIONS,POST,GET,PUT,DELETE",
-    		"Access-Control-Expose-Headers":   "Content-Length",
-  		},
+			"Access-Control-Allow-Origin":   "*", // or "https://your-site.example"
+			"Access-Control-Allow-Headers":  "Content-Type,Authorization",
+			"Access-Control-Allow-Methods":  "OPTIONS,POST,GET,PUT,DELETE",
+			"Access-Control-Expose-Headers": "Content-Length",
+		},
 		Body: string(js),
 	}, nil
 }

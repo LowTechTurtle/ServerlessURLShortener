@@ -1,6 +1,5 @@
 package mock
 
-
 import "github.com/LowTechTurtle/ServerlessURLShortener/internal/core/domain"
 
 var MockLinkData []domain.Link = []domain.Link{

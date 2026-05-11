@@ -10,10 +10,11 @@ import (
 )
 
 type AppConfig struct {
-	dynamoTableName string // DynamoDB table name
-	redisAddress    string // Redis address
-	redisPassword   string // Redis password
-	redisDB         int    // Redis DB
+	dynamoTableName  string // DynamoDB table name
+	dynamoDBEndpoint string // DynamoDB endpoint (for local dev)
+	redisAddress     string // Redis address
+	redisPassword    string // Redis password
+	redisDB          int    // Redis DB
 }
 
 func NewConfig() *AppConfig {
@@ -39,6 +40,14 @@ func (c *AppConfig) GetLinkTableName() string {
 		return os.Getenv("LinkTableName")
 	}
 	return tableName
+}
+
+func (c *AppConfig) GetDynamoDBEndpoint() string {
+	endpoint, ok := os.LookupEnv("DynamoDBEndpoint")
+	if !ok {
+		return "" // Default to AWS Cloud
+	}
+	return endpoint
 }
 
 func (c *AppConfig) GetRedisParams() (string, string, int) {

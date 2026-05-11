@@ -1,8 +1,4 @@
 // ======== AUTH.JS ========
-const cognitoDomain = "";
-const clientId = "2g3lh5n8te1sv4vccl2veku57t";
-const redirectUri = "https://d166hi15epg4f7.cloudfront.net";
-const logoutUri = "https://d166hi15epg4f7.cloudfront.net";
 const tokenStorageKey = "cognito_tokens";
 const pkceVerifierKey = "pkce_verifier";
 

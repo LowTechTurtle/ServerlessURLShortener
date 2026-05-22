@@ -49,13 +49,6 @@ clean:
 	@echo "Cleaning up..."
 	rm -rf build/
 
-# Clean generated binaries
-clean:
-	@echo "Cleaning up..."
-	rm -f internal/adapters/functions/generate/bootstrap
-	rm -f internal/adapters/functions/redirect/bootstrap
-	rm -f internal/adapters/functions/delete/bootstrap
-
 # Build Docker images
 docker-build: docker-build-generate docker-build-redirect docker-build-delete
 

@@ -12,12 +12,16 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6" 
+    }
   }
-
   required_version = ">= 1.10.0"
 }
 
 variable "aws_region" {
+  type = string
   description = "The AWS region to deploy into"
   default     = "us-east-1"
 }
@@ -26,7 +30,10 @@ provider "aws" {
   region = var.aws_region
 }
 
-variable "project" { default = "serverless-shortener" }
+variable "project" { 
+  type = string
+  default = "serverless-shortener"
+}
 
 resource "random_string" "suffix" {
   length  = 6

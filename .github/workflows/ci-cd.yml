@@ -1,0 +1,103 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Mandatory for AWS OIDC authentication
+permissions:
+  id-token: write 
+  contents: read
+
+jobs:
+  # =========================================
+  # CONTINUOUS INTEGRATION (CI)
+  # =========================================
+  ci-code-quality:
+    name: Code Quality & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      # Rely entirely on the Makefile for execution
+      - name: Run Go Format Check
+        run: make check-fmt
+
+      - name: Run Go Lint
+        run: make lint
+
+      - name: Run Unit Tests
+        run: make test
+
+      - name: Run Trivy Scan
+        run: make trivy-scan
+
+  ci-terraform:
+    name: Terraform Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">=1.10.0"
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      # Rely entirely on the Makefile for execution
+      - name: Terraform Format Check
+        run: make tf-fmt-check
+
+      - name: Terraform Validate
+        run: make tf-validate
+
+      - name: Run TFLint
+        run: make tf-lint
+# =========================================
+# CONTINUOUS DEPLOYMENT (CD)
+# =========================================
+  cd-deploy:
+    name: Deploy to AWS (Infra Only)
+    needs: [ci-code-quality, ci-terraform]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Connect to AWS Securely using OIDC
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::650251702692:role/GitHubActionsOIDCRole
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ">=1.10.0"
+
+      # Rely on Makefile for Terraform deployment
+      - name: Terraform Init
+        run: make tf-init
+
+      - name: Terraform Apply
+        run: make tf-apply

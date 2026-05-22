@@ -1,7 +1,20 @@
 terraform {
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+  backend "s3" {
+    bucket       = "s3tfbackend-650251702692-us-east-1-an"
+    key          = "url-shortener/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  required_version = ">= 1.10.0"
 }
 
 variable "aws_region" {
@@ -9,8 +22,8 @@ variable "aws_region" {
   default     = "us-east-1"
 }
 
-provider "aws" { 
-  region = var.aws_region 
+provider "aws" {
+  region = var.aws_region
 }
 
 variable "project" { default = "serverless-shortener" }
@@ -27,9 +40,9 @@ resource "random_string" "suffix" {
 resource "aws_dynamodb_table" "links_table" {
   name         = "${var.project}-links"
   billing_mode = "PAY_PER_REQUEST"
-  
+
   # Changed from "short_link" to "id" to match your Go struct
-  hash_key     = "id"
+  hash_key = "id"
 
   attribute {
     name = "id"
@@ -43,7 +56,7 @@ resource "aws_dynamodb_table" "links_table" {
 
 resource "aws_cognito_user_pool" "pool" {
   name = "${var.project}-user-pool"
-  
+
   # 1. Allow users to sign themselves up
   admin_create_user_config {
     allow_admin_create_user_only = false
@@ -65,7 +78,7 @@ resource "aws_cognito_user_pool" "pool" {
   verification_message_template {
     # Choose "CONFIRM_WITH_CODE" or "CONFIRM_WITH_LINK"
     default_email_option = "CONFIRM_WITH_CODE"
-    
+
     email_subject = "Verify your account"
     email_message = "Welcome to our Shortener! Your verification code is {####}."
   }
@@ -92,9 +105,9 @@ resource "aws_cognito_user_pool_client" "client" {
   generate_secret                      = false
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
-  allowed_oauth_scopes                 =["email", "openid", "phone"]
+  allowed_oauth_scopes                 = ["email", "openid", "phone"]
   supported_identity_providers         = ["COGNITO"]
-  
+
   # CloudFront domain will be passed dynamically
   callback_urls = ["https://${aws_cloudfront_distribution.frontend.domain_name}"]
   logout_urls   = ["https://${aws_cloudfront_distribution.frontend.domain_name}"]
@@ -128,9 +141,9 @@ resource "aws_iam_role_policy" "dynamo_access" {
   role = aws_iam_role.lambda_role.id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement =[{
-      Effect = "Allow"
-      Action =["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem"]
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:DeleteItem", "dynamodb:UpdateItem"]
       Resource = aws_dynamodb_table.links_table.arn
     }]
   })
@@ -206,9 +219,9 @@ resource "aws_apigatewayv2_stage" "default" {
 # Routes & Integrations
 locals {
   routes = {
-    "PUT /generate"       = aws_lambda_function.generate.invoke_arn
-    "GET /{id}"    = aws_lambda_function.redirect.invoke_arn
-    "DELETE /{id}" = aws_lambda_function.delete.invoke_arn
+    "PUT /generate" = aws_lambda_function.generate.invoke_arn
+    "GET /{id}"     = aws_lambda_function.redirect.invoke_arn
+    "DELETE /{id}"  = aws_lambda_function.delete.invoke_arn
   }
 }
 
@@ -218,14 +231,14 @@ resource "aws_apigatewayv2_integration" "integrations" {
   integration_type = "AWS_PROXY"
   integration_uri  = each.value
 
-  payload_format_version = "2.0" 
+  payload_format_version = "2.0"
 }
 
 resource "aws_apigatewayv2_route" "routes" {
-  for_each   = local.routes
-  api_id     = aws_apigatewayv2_api.api.id
-  route_key  = each.key
-  target     = "integrations/${aws_apigatewayv2_integration.integrations[each.key].id}"
+  for_each  = local.routes
+  api_id    = aws_apigatewayv2_api.api.id
+  route_key = each.key
+  target    = "integrations/${aws_apigatewayv2_integration.integrations[each.key].id}"
 }
 
 resource "aws_lambda_permission" "api_gw" {
@@ -276,25 +289,25 @@ resource "aws_cloudfront_distribution" "frontend" {
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = aws_s3_bucket.frontend.id
     viewer_protocol_policy = "redirect-to-https"
-    
+
     forwarded_values {
       query_string = false
-      cookies { 
-        forward = "none" 
+      cookies {
+        forward = "none"
       }
     }
   }
 
   # Expanded restrictions block
-  restrictions { 
-    geo_restriction { 
-      restriction_type = "none" 
-    } 
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
   }
 
   # Expanded viewer_certificate block
-  viewer_certificate { 
-    cloudfront_default_certificate = true 
+  viewer_certificate {
+    cloudfront_default_certificate = true
   }
 }
 
@@ -302,7 +315,7 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
   bucket = aws_s3_bucket.frontend.id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement =[{
+    Statement = [{
       Effect    = "Allow"
       Principal = { Service = "cloudfront.amazonaws.com" }
       Action    = "s3:GetObject"
@@ -336,7 +349,7 @@ resource "aws_s3_object" "app_js" {
   bucket       = aws_s3_bucket.frontend.id
   key          = "app.js"
   content_type = "application/javascript"
-  
+
   content = templatefile("${path.module}/templates/app.js.tftpl", {
     api_endpoint   = aws_apigatewayv2_api.api.api_endpoint
     cognito_domain = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com"

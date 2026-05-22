@@ -22,19 +22,32 @@ test:
 	go test -v ./internal/tests/unit/...
 
 # Build the Lambda functions
-build: build-generate build-redirect build-delete
+# ==========================================
+# Go Code Quality & Build Commands
+# ==========================================
 
-build-generate:
-	@echo "Building generate function..."
-	GOOS=linux GOARCH=amd64 go build -o internal/adapters/functions/generate/bootstrap internal/adapters/functions/generate/main.go
+# ... (keep fmt, lint, test as they were) ...
 
-build-redirect:
-	@echo "Building redirect function..."
-	GOOS=linux GOARCH=amd64 go build -o internal/adapters/functions/redirect/bootstrap internal/adapters/functions/redirect/main.go
+build:
+	@echo "Building and Zipping Lambda functions..."
+	# Create the build directory
+	mkdir -p build
 
-build-delete:
-	@echo "Building delete function..."
-	GOOS=linux GOARCH=amd64 go build -o internal/adapters/functions/delete/bootstrap internal/adapters/functions/delete/main.go
+	# 1. Build and zip Generate
+	GOOS=linux GOARCH=amd64 go build -o build/bootstrap internal/adapters/functions/generate/main.go
+	cd build && zip generate.zip bootstrap && rm bootstrap
+
+	# 2. Build and zip Redirect
+	GOOS=linux GOARCH=amd64 go build -o build/bootstrap internal/adapters/functions/redirect/main.go
+	cd build && zip redirect.zip bootstrap && rm bootstrap
+
+	# 3. Build and zip Delete
+	GOOS=linux GOARCH=amd64 go build -o build/bootstrap internal/adapters/functions/delete/main.go
+	cd build && zip delete.zip bootstrap && rm bootstrap
+
+clean:
+	@echo "Cleaning up..."
+	rm -rf build/
 
 # Clean generated binaries
 clean:

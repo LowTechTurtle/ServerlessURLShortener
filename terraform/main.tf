@@ -164,8 +164,8 @@ resource "aws_lambda_function" "generate" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "bootstrap"
   runtime          = "provided.al2023"
-  filename         = "../build/generate.zip"
-  source_code_hash = filebase64sha256("../build/generate.zip")
+  filename         = "${path.module}/../build/generate.zip"
+  source_code_hash = filebase64sha256("${path.module}/../build/generate.zip")
   environment { variables = local.lambda_env_vars }
 }
 
@@ -174,8 +174,8 @@ resource "aws_lambda_function" "redirect" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "bootstrap"
   runtime          = "provided.al2023"
-  filename         = "../build/redirect.zip"
-  source_code_hash = filebase64sha256("../build/redirect.zip")
+  filename         = "${path.module}/../build/redirect.zip"
+  source_code_hash = filebase64sha256("${path.module}/../build/redirect.zip")
   environment { variables = local.lambda_env_vars }
 }
 
@@ -184,8 +184,8 @@ resource "aws_lambda_function" "delete" {
   role             = aws_iam_role.lambda_role.arn
   handler          = "bootstrap"
   runtime          = "provided.al2023"
-  filename         = "../build/delete.zip"
-  source_code_hash = filebase64sha256("../build/delete.zip")
+  filename         = "${path.module}/../build/delete.zip"
+  source_code_hash = filebase64sha256("${path.module}/../build/delete.zip")
   environment { variables = local.lambda_env_vars }
 }
 

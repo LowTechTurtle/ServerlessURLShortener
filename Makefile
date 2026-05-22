@@ -94,7 +94,7 @@ tf-fmt-check:
 	@echo "Checking Terraform format..."
 	terraform -chdir=terraform fmt -check -recursive
 
-tf-validate:
+tf-validate: build
 	@echo "Validating Terraform code..."
 	terraform -chdir=terraform init -backend=false
 	terraform -chdir=terraform validate
@@ -112,6 +112,6 @@ tf-init:
 	@echo "Initializing Terraform Backend..."
 	terraform -chdir=terraform init
 
-tf-apply:
+tf-apply: build
 	@echo "Applying Terraform configuration..."
 	terraform -chdir=terraform apply -auto-approve

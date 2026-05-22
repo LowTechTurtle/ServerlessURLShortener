@@ -1,11 +1,15 @@
-.PHONY: all fmt lint test build clean
+.PHONY: all fmt check-fmt lint test build clean tf-fmt tf-fmt-check tf-validate tf-lint trivy-scan docker-build
 
-all: fmt lint test build
+all: fmt check-fmt lint test build tf-fmt tf-fmt-check tf-validate tf-lint trivy-scan
 
 # Format all Go files
 fmt:
 	@echo "Formatting Go code..."
 	go fmt ./...
+
+check-fmt:
+	@echo "Checking Go format..."
+	@if [ "$$(gofmt -s -l . | wc -l)" -gt 0 ]; then echo "Go code is not formatted. Run 'make fmt' locally."; exit 1; fi
 
 # Run static analysis
 lint:
@@ -15,7 +19,7 @@ lint:
 # Run unit tests with coverage
 test:
 	@echo "Running unit tests..."
-	go test -v -cover ./internal/tests/unit/...
+	go test -v ./internal/tests/unit/...
 
 # Build the Lambda functions
 build: build-generate build-redirect build-delete
@@ -65,3 +69,36 @@ down:
 
 logs:
 	docker compose logs -f
+
+# ==========================================
+# Terraform Code Quality Commands
+# ==========================================
+tf-fmt:
+	@echo "Formatting Terraform code..."
+	terraform -chdir=terraform fmt -recursive
+
+tf-fmt-check:
+	@echo "Checking Terraform format..."
+	terraform -chdir=terraform fmt -check -recursive
+
+tf-validate:
+	@echo "Validating Terraform code..."
+	terraform -chdir=terraform init -backend=false
+	terraform -chdir=terraform validate
+
+tf-lint:
+	@echo "Running tflint..."
+	cd terraform && tflint --init && tflint
+
+trivy-scan:
+	@echo "Running Trivy vulnerability scanner on IaC & Dockerfile..."
+	trivy config ./terraform
+	trivy config Dockerfile
+
+tf-init:
+	@echo "Initializing Terraform Backend..."
+	terraform -chdir=terraform init
+
+tf-apply:
+	@echo "Applying Terraform configuration..."
+	terraform -chdir=terraform apply -auto-approve

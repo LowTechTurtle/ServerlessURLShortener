@@ -83,7 +83,7 @@ tf-fmt:
 	@echo "Formatting Terraform code..."
 	terraform -chdir=terraform fmt -recursive
 
-tf-fmt-check:
+tf-fmt-check: tf-fmt
 	@echo "Checking Terraform format..."
 	terraform -chdir=terraform fmt -check -recursive
 

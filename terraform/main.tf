@@ -174,6 +174,8 @@ resource "aws_lambda_function" "generate" {
   filename         = "${path.module}/../build/generate.zip"
   source_code_hash = filebase64sha256("${path.module}/../build/generate.zip")
   environment { variables = local.lambda_env_vars }
+  tracing_config { mode = "Active" }
+  depends_on = [aws_cloudwatch_log_group.lambda_logs]
 }
 
 resource "aws_lambda_function" "redirect" {
@@ -184,6 +186,8 @@ resource "aws_lambda_function" "redirect" {
   filename         = "${path.module}/../build/redirect.zip"
   source_code_hash = filebase64sha256("${path.module}/../build/redirect.zip")
   environment { variables = local.lambda_env_vars }
+  tracing_config { mode = "Active" }
+  depends_on = [aws_cloudwatch_log_group.lambda_logs]
 }
 
 resource "aws_lambda_function" "delete" {
@@ -194,6 +198,8 @@ resource "aws_lambda_function" "delete" {
   filename         = "${path.module}/../build/delete.zip"
   source_code_hash = filebase64sha256("${path.module}/../build/delete.zip")
   environment { variables = local.lambda_env_vars }
+  tracing_config { mode = "Active" }
+  depends_on = [aws_cloudwatch_log_group.lambda_logs]
 }
 
 # ==========================================
@@ -220,6 +226,21 @@ resource "aws_apigatewayv2_stage" "default" {
   default_route_settings {
     throttling_rate_limit  = 3
     throttling_burst_limit = 3
+  }
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gw_logs.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      sourceIp                = "$context.identity.sourceIp"
+      requestTime             = "$context.requestTime"
+      protocol                = "$context.protocol"
+      httpMethod              = "$context.httpMethod"
+      resourcePath            = "$context.resourcePath"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+    })
   }
 }
 
@@ -362,6 +383,43 @@ resource "aws_s3_object" "app_js" {
     cognito_domain = "https://${aws_cognito_user_pool_domain.main.domain}.auth.${var.aws_region}.amazoncognito.com"
     client_id      = aws_cognito_user_pool_client.client.id
     redirect_uri   = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+  })
+}
+
+
+# ==========================================
+# 7. MONITORING & LOGGING (CloudWatch & X-Ray)
+# ==========================================
+
+# Explicit Log Groups for Lambdas (Prevents infinite log retention)
+resource "aws_cloudwatch_log_group" "lambda_logs" {
+  for_each          = toset(["generate", "redirect", "delete"])
+  name              = "/aws/lambda/${var.project}-${each.key}"
+  retention_in_days = 7
+}
+
+# Log Group for API Gateway Access Logs
+resource "aws_cloudwatch_log_group" "api_gw_logs" {
+  name              = "/aws/vendedlogs/api-gw-${var.project}"
+  retention_in_days = 7
+}
+
+resource "aws_iam_role_policy" "monitoring_access" {
+  name = "lambda_monitoring_access"
+  role = aws_iam_role.lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "xray:PutTraceSegments",
+        "xray:PutTelemetryRecords",
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+      Resource = "*"
+    }]
   })
 }
 
